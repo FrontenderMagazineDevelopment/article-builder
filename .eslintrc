@@ -1,0 +1,22 @@
+{
+  "parser": "babel-eslint",
+  "extends": ["airbnb", "prettier", "prettier/react"],
+  "plugins": [
+    "react",
+    "jsx-a11y",
+    "import",
+    'jest'
+  ],
+  "env": {
+    "browser": true,
+    "node": true,
+    "jest": true,
+    "es6": true
+  },
+  "settings": {
+    "import/core-modules": "get",
+  },
+  rules: {
+    "no-underscore-dangle": ["error", { "allow": ["_id"] }]
+  }
+}
