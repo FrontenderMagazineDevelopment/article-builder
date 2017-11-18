@@ -5,7 +5,8 @@
     "react",
     "jsx-a11y",
     "import",
-    'jest'
+    'jest',
+    "ejs"
   ],
   "env": {
     "browser": true,
