@@ -144,12 +144,16 @@ export default async (reponame, path = '../repos') => {
     console.log(error); // eslint-disable-line
   }
 
+  console.warn(article);
+
   const authors = article.author;
-  const translators = translation.author;
+  const translators = translation ? translation.author : [];
 
   const tag1 = Array.isArray(article.tags) && article.tags.length > 0 ? article.tags : [];
   const tag2 =
-    Array.isArray(translation.tags) && translation.tags.length > 0 ? translation.tags : [];
+    translation && Array.isArray(translation.tags) && translation.tags.length > 0
+      ? translation.tags
+      : [];
   const tags = tag1
     .concat(tag2)
     .map(tag => ejs.render(tagTemplate, { tag }).trim())
@@ -207,7 +211,7 @@ export default async (reponame, path = '../repos') => {
   });
 
   const page = ejs.render(articleTemplate, {
-    translation,
+    translation: translation || article,
     customStylesTrue,
     original: article,
     tags,

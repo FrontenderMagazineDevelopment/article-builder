@@ -33,6 +33,9 @@ const { name, version } = require('../package.json');
   );
 
   const published = await Event.find({ state: 'published' });
+
+  console.warn(published);
+
   published.splice(1).forEach(async event => {
     const articleId = event.article_id;
     const query = [];
