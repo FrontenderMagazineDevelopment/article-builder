@@ -6,8 +6,8 @@
   typeof exports === 'object' && typeof module !== 'undefined'
     ? (module.exports = factory())
     : typeof define === 'function' && define.amd
-    ? define(factory)
-    : (global.Split = factory());
+      ? define(factory)
+      : (global.Split = factory());
 })(this, function() {
   'use strict';
   // The programming goals of Split.js are to deliver readable, understandable and
@@ -122,7 +122,9 @@
     var gutterSize = options.gutterSize !== undefined ? options.gutterSize : 10;
     var snapOffset = options.snapOffset !== undefined ? options.snapOffset : 30;
     var direction = options.direction || 'horizontal';
-    var cursor = options.cursor || (direction === 'horizontal' ? 'ew-resize' : 'ns-resize');
+    var cursor =
+      options.cursor ||
+      (direction === 'horizontal' ? 'ew-resize' : 'ns-resize');
     var gutter =
       options.gutter ||
       function(i, gutterDirection) {
@@ -259,7 +261,10 @@
       // Include the appropriate gutter sizes to prevent overflows.
       if (offset <= elements[this.a].minSize + snapOffset + this.aGutterSize) {
         offset = elements[this.a].minSize + this.aGutterSize;
-      } else if (offset >= this.size - (elements[this.b].minSize + snapOffset + this.bGutterSize)) {
+      } else if (
+        offset >=
+        this.size - (elements[this.b].minSize + snapOffset + this.bGutterSize)
+      ) {
         offset = this.size - (elements[this.b].minSize + this.bGutterSize);
       }
 
@@ -427,7 +432,7 @@
       var element = {
         element: elementOrSelector(id),
         size: sizes[i],
-        minSize: minSizes[i],
+        minSize: minSizes[i]
       };
 
       var pair;
@@ -441,7 +446,7 @@
           isFirst: i === 1,
           isLast: i === ids.length - 1,
           direction: direction,
-          parent: parent,
+          parent: parent
         };
 
         // For first and last pairs, first and last gutter width is half.
@@ -457,7 +462,10 @@
         }
 
         // if the parent has a reverse flex-direction, switch the pair elements.
-        if (parentFlexDirection === 'row-reverse' || parentFlexDirection === 'column-reverse') {
+        if (
+          parentFlexDirection === 'row-reverse' ||
+          parentFlexDirection === 'column-reverse'
+        ) {
           var temp = pair.a;
           pair.a = pair.b;
           pair.b = temp;
@@ -475,8 +483,14 @@
           var gutterElement = gutter(i, direction);
           setGutterSize(gutterElement, gutterSize);
 
-          gutterElement[addEventListener]('mousedown', startDragging.bind(pair));
-          gutterElement[addEventListener]('touchstart', startDragging.bind(pair));
+          gutterElement[addEventListener](
+            'mousedown',
+            startDragging.bind(pair)
+          );
+          gutterElement[addEventListener](
+            'touchstart',
+            startDragging.bind(pair)
+          );
 
           parent.insertBefore(gutterElement, element.element);
 
@@ -534,7 +548,7 @@
     if (isIE8) {
       return {
         setSizes: setSizes,
-        destroy: destroy,
+        destroy: destroy
       };
     }
 
@@ -564,7 +578,7 @@
           }
         }
       },
-      destroy: destroy,
+      destroy: destroy
     };
   };
 

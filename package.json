@@ -1,6 +1,6 @@
 {
   "name": "@frontender-magazine/article-builder",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Build article from repo",
   "main": "index.js",
   "scripts": {
