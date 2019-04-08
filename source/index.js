@@ -1,18 +1,17 @@
 import fs from 'fs';
-import fetch from 'isomorphic-fetch';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
-import 'babel-polyfill';
 import ArticleSDK from '@frontender-magazine/fm-article';
 import ejs from 'ejs';
+import Octokit from '@octokit/rest';
 
+const AdmZip = require('adm-zip');
 const removeMd = require('remove-markdown');
-const url = require('url');
+const urlPack = require('url');
 const hljs = require('highlight.js');
 const rimraf = require('rimraf');
 const MarkdownIt = require('markdown-it');
 const jsdom = require('jsdom');
-const Git = require('nodegit');
 
 const { JSDOM } = jsdom;
 const markdown = new MarkdownIt({
@@ -56,65 +55,69 @@ hljs.configure({
   languages,
 });
 
-const ENV_PATH = resolve(__dirname, '../../.env');
-const CONFIG_DIR = '../config/';
-const CONFIG_PATH = resolve(
-  __dirname,
-  `${CONFIG_DIR}application.${process.env.NODE_ENV || 'local'}.json`,
-);
-if (!fs.existsSync(ENV_PATH)) throw new Error('Envirnment files not found');
-dotenv.config({ path: ENV_PATH });
+dotenv.config();
 
-if (!fs.existsSync(CONFIG_PATH)) throw new Error(`Config not found: ${CONFIG_PATH}`);
-const config = require(CONFIG_PATH); // eslint-disable-line
+const { PROTOCOL, ARTICLE_SERVICE, GITHUB_TOKEN, ORG_NAME } = process.env;
+const articleSDK = new ArticleSDK(`${PROTOCOL}${ARTICLE_SERVICE}`);
 
-const articleSDK = new ArticleSDK(config.articleService);
-const optionsGitHub = {
-  headers: {
-    Authorization: `token ${process.env.GITHUB_SECRET_TOKEN}`,
-    Accept: 'application/vnd.github.v3+json',
-    userAgent: `UserCrowler/${process.env.VERSION}`,
-  },
-};
+/**
+ * Transform repo to html article
+ * @example
+ *  (async function(){
+ *    await builder(
+ *      'the-art-of-html-semantics-pt1',
+ *      '../websites/articles/'
+ *    );
+ *  })();
+ * @namespace ArticleBuilder
+ * @param {string} reponame - repository name
+ * @param {string} path  - path where article will be created
+ * @throw {Error}
+ */
+const ArticleBuilder = async (reponame, path = '../repos') => {
+  const octokit = Octokit({
+    auth: `token ${GITHUB_TOKEN}`,
+  });
 
-export default async (reponame, path = '../repos') => {
-  const contributorsURL = `https://api.github.com/repos/FrontenderMagazine/${
-    reponame
-  }/contributors`;
+  const link = await octokit.repos.getArchiveLink({
+    owner: ORG_NAME,
+    repo: reponame,
+    archive_format: 'zipball',
+    ref: 'master',
+  });
+
+  const dirname = link.headers['content-disposition']
+    .replace('attachment; filename=', '')
+    .replace('.zip', '');
   const repoPath = resolve(path, reponame);
-
+  const zip = new AdmZip(link.data);
+  zip.extractAllTo(path, true);
   if (fs.existsSync(repoPath)) {
     rimraf.sync(repoPath);
   }
-  await Git.Clone(`https://github.com/FrontenderMagazine/${reponame}.git`, repoPath);
-  console.log('cloned to ', repoPath);
-
-  const customStylesTrue = fs.existsSync(resolve(repoPath, 'styles.css'));
-
-  let result;
-  let json;
-  try {
-    result = await fetch(contributorsURL, optionsGitHub);
-    if (!result.ok)
-      throw new Error(`${contributorsURL} fail to load with ${result.status} ${result.statusText}`);
-    json = await result.json();
-  } catch (error) {
-    console.log('errored: ', error.message); //eslint-disable-line
-  }
-
-  let contributorsList = json.map(async item => {
-    let user = await fetch(item.url, optionsGitHub);
-    if (!result.ok) throw new Error(`${item.url} fails to load`);
-    user = await user.json();
-    return {
-      login: item.login,
-      url: item.html_url,
-      name: user.name,
-      blog: user.blog,
-    };
+  fs.renameSync(resolve(path, dirname), repoPath);
+  const customCSSPath = resolve(repoPath, 'styles.css');
+  const customStylesTrue = fs.existsSync(customCSSPath);
+  const result = await octokit.repos.listContributors({
+    owner: ORG_NAME,
+    repo: reponame,
+    anon: true,
+    per_page: 100,
+    page: 1,
   });
 
-  contributorsList = await Promise.all(contributorsList);
+  let contributorsList = result.data
+    .sort(({ contributions: contributionsA }, { contributions: contributionsB }) => {
+      return contributionsA - contributionsB;
+    })
+    .map(({ login, html_url: url, name, blog }) => {
+      return {
+        login,
+        url,
+        name,
+        blog,
+      };
+    });
 
   const md = fs.readFileSync(resolve(repoPath, 'rus.md'), { encoding: 'utf-8' });
   const descriptionMd = fs.readFileSync(resolve(repoPath, 'README.md'), { encoding: 'utf-8' });
@@ -133,19 +136,12 @@ export default async (reponame, path = '../repos') => {
 
   let article;
   let translation;
-  try {
-    article = await articleSDK.getByReponame(reponame);
-    article = article[0];
-    translation = article.translations.filter(item => {
-      return item.domain === 'frontender.info';
-    });
-    translation = translation[0];
-  } catch (error) {
-    console.log(error); // eslint-disable-line
-  }
-
-  console.warn(article);
-
+  article = await articleSDK.getByReponame(reponame);
+  // eslint-disable-next-line prefer-destructuring
+  article = article[0];
+  translation = article.translations.filter(item => item.domain === 'frontender.info');
+  // eslint-disable-next-line prefer-destructuring
+  translation = translation[0];
   const authors = article.author;
   const translators = translation ? translation.author : [];
 
@@ -165,7 +161,7 @@ export default async (reponame, path = '../repos') => {
         if (author.github === undefined) {
           return author.name ? author.name === item.name : false;
         }
-        return item.login === url.parse(author.github).pathname.slice(1);
+        return item.login === urlPack.parse(author.github).pathname.slice(1);
       });
       return res.length === 0;
     })
@@ -182,11 +178,11 @@ export default async (reponame, path = '../repos') => {
     };
     if (author.twitter) {
       data.user.twitter = author.twitter;
-      data.user.twitterLabel = url.parse(author.twitter).pathname;
+      data.user.twitterLabel = urlPack.parse(author.twitter).pathname;
     }
     if (author.github) {
       data.user.github = author.github;
-      data.user.githubLabel = url.parse(author.github).pathname;
+      data.user.githubLabel = urlPack.parse(author.github).pathname;
     }
     return ejs.render(personTemplate, data);
   });
@@ -201,11 +197,11 @@ export default async (reponame, path = '../repos') => {
     };
     if (author.twitter) {
       data.user.twitter = author.twitter;
-      data.user.twitterLabel = url.parse(author.twitter).pathname;
+      data.user.twitterLabel = urlPack.parse(author.twitter).pathname;
     }
     if (author.github) {
       data.user.github = author.github;
-      data.user.githubLabel = url.parse(author.github).pathname;
+      data.user.githubLabel = urlPack.parse(author.github).pathname;
     }
     return ejs.render(personTemplate, data);
   });
@@ -223,3 +219,5 @@ export default async (reponame, path = '../repos') => {
 
   fs.writeFileSync(resolve(repoPath, 'index.html'), page);
 };
+
+export default ArticleBuilder;

@@ -1,14 +1,9 @@
 {
-  "presets": [
-    ["env", {
-      "targets": {
-        "node": "current",
-        "uglify": true,
-      },
-      "modules": "commonjs",
-      "debug": true
-    }],
-    "react",
-    "stage-0"
+  "presets": ["@babel/preset-env"],
+  "plugins": [
+    "@babel/plugin-syntax-export-default-from",
+    "@babel/plugin-proposal-export-namespace-from",
+    "@babel/plugin-transform-runtime",
+    "@babel/plugin-syntax-dynamic-import"
   ]
 }
