@@ -2,7 +2,7 @@
   "name": "@frontender-magazine/article-builder",
   "version": "1.2.0",
   "description": "Build article from repo",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "postversion": "git push && git push --tags",
     "version": "npm run build:prod && git add . -A",
