@@ -5,3 +5,13 @@ node_modules
 src
 coverage
 .DS_Store
+doc
+.env
+.env.sample
+.editorconfig
+.babelrc
+.eslintrc
+.eslintignore
+.gitignore
+gulpfile.js
+postcss.config.js

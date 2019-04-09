@@ -1,6 +1,6 @@
 {
   "name": "@frontender-magazine/article-builder",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Build article from repo",
   "main": "lib/index.js",
   "scripts": {
@@ -24,8 +24,7 @@
     "test": "jest",
     "minify": "minify lib -d lib --removeConsole --removeDebugger",
     "format": "prettier --write --single-quote --print-width 100 --trailing-comma all 'source/**/*.{js,jsx}'",
-    "precommit": "git add . -A && lint-staged",
-    "commitmsg": "commit-msg ${GIT_PARAMS}"
+    "precommit": "git add . -A && lint-staged"
   },
   "lint-staged": {
     "*.{jsx,js}": [
